@@ -165,24 +165,6 @@ class HARDataset:
                     HARDataset._ensure(f'{self.seqfile}_test/{self.dataname}/{N}')
                     M.to_csv(f'{self.seqfile}_test/{self.dataname}/{N}/{N}_{idx}.csv', index=False, header=False)
 
-    # ---------- cleaning ----------
-    def __offdelete__(self):
-        def clean_dir(path):
-            if not os.path.isdir(path): return
-            for file in os.listdir(path):
-                fp = os.path.join(path, file)
-                df = pd.read_csv(fp, header=None)
-                df.drop(df[df.iloc[:, -1] == 0].index, inplace=True)
-                if df.empty: os.remove(fp)
-                else:        df.to_csv(fp, header=False, index=False)
-
-        for i in range(self.MAX):
-            if not self.time_aware:
-                clean_dir(f"{self.seqfile}/{self.dataname}/{i + 20}")
-            else:
-                clean_dir(f"{self.seqfile}_train/{self.dataname}/{i + 20}")
-                clean_dir(f"{self.seqfile}_test/{self.dataname}/{i + 20}")
-
     def __freqcut__(self, threshold=0.05):
         """sensor-based pruning."""
         def prune_dir(path):
@@ -703,33 +685,23 @@ class HARDataset:
 def _tag(mode: str, thr: float) -> str:
     """Folder tag that encodes filter type + percentage."""
     t = int(round(thr * 100))
-    if mode == "sensor":
-        return f"_sens_t{t:02d}"
-    elif mode == "room":
-        return f"_room_t{t:02d}"
-    elif mode == "spa":
-        return f"_spa_t{t:02d}"
-    elif mode == "none":
-        return f"_spa_tnone"
-    else:
-        raise ValueError("mode must be 'sensor' or 'room' or 'spa' or 'none'.")
+    return f"_sens_t{t:02d}"
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--datasets", type=str, nargs="+", default=["milan","cairo","kyoto7"])
-    parser.add_argument("--mode", type=str, choices=["sensor","room", "spa", "none"], default="sensor")
+    parser.add_argument("--mode", type=str, choices=["sensor"], default="sensor")
     parser.add_argument("--threshold", type=float, default=0.00, help="freqcut threshold")
-    parser.add_argument("--time-aware", action="store_true", default=False)
-    parser.add_argument("--maxlen", type=int, default=1500)
-    parser.add_argument("--off", action="store_false")
+    parser.add_argument("--time-aware", action="store_true", default=False, help="Setting True for autoregressive experiment")
+    parser.add_argument("--maxlen", type=int, default=1500, help="Padding length")
 
-    parser.add_argument("--seq_corrupt", action="store_true")
-    parser.add_argument("--img_corrupt", action="store_true")
-    parser.add_argument("--ratio", type=int, default=0.05)
-    parser.add_argument("--ac", type=int, default=5)
-    parser.add_argument("--var", type=int, default=10)
+    parser.add_argument("--seq_corrupt", action="store_true", help="Setting True to stimult the sensor malfunction")
+    parser.add_argument("--img_corrupt", action="store_true", help="Setting True to stimult the sensor malfunction")
+    parser.add_argument("--ratio", type=int, default=0.05, help="The proportion of data dropped within a single activity")
+    parser.add_argument("--ac", type=int, default=5, help="The possibility of whether sensor malfunction occurred for a single activity")
+    parser.add_argument("--var", type=int, default=10, help="The variance of physical sensor movement")
     args = parser.parse_args()
 
     tag = _tag(args.mode, args.threshold)
@@ -746,10 +718,10 @@ if __name__ == "__main__":
         img_root   = f"datasets/image{tag}_var{args.var}"
         cat_root   = f"datasets/cat{tag}_var{args.var}"
     else:
-        seq_root   = f"datasets/seq{tag}_off{args.off}"
-        loc_root   = f"datasets/loc{tag}_off{args.off}"
-        img_root   = f"datasets/image{tag}_off{args.off}"
-        cat_root   = f"datasets/cat{tag}_off{args.off}"
+        seq_root   = f"datasets/seq{tag}"
+        loc_root   = f"datasets/loc{tag}"
+        img_root   = f"datasets/image{tag}"
+        cat_root   = f"datasets/cat{tag}"
 
     for name in args.datasets:
         H = HARDataset(seqfile=seq_root, locfile=loc_root, imagefile=img_root, catfile=cat_root, time_aware=args.time_aware)
@@ -757,18 +729,8 @@ if __name__ == "__main__":
         H.__read__(dataname=name)
         print("Getting sequence...")
         H.__getseq__()
-
-        if args.off:
-            print("Off-deleting...")
-            H.__offdelete__()
-
         print("Frequency cutting...")
-        if args.mode == "sensor":
-            H.__freqcut__(threshold=args.threshold)
-        elif args.mode == "spa":
-            H.__freqcut_spa__(threshold=args.threshold)
-        elif args.mode == "room":
-            H.__freqcut_room__(room_json_path=f"dataset/{name}.json", threshold=args.threshold)
+        H.__freqcut__(threshold=args.threshold)
 
         if args.seq_corrupt:
             H.seq_corrupt(args.ratio, args.ac)
@@ -776,7 +738,7 @@ if __name__ == "__main__":
         print("Padding...")
         H.padding(max_length=args.maxlen)
         print("Generating Temperal Images...")
-        H.temp(); #H.spa(); H.cat()
+        H.temp();
 
         if args.img_corrupt:
             H.img_corrupt(args.var)
@@ -787,4 +749,5 @@ if __name__ == "__main__":
         print("Generating Category Images...")
         H.cat();
         print("Done!")
+
 
