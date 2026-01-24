@@ -30,7 +30,7 @@ If you use our default setting to process the data, then you can just run:
 bash run.sh
 ```
 If you customize your setting, please make sure the following setting are consistent:
-'''bash
+```bash
 for dataset in kyoto7
 do
     for Bi in 1
@@ -49,7 +49,8 @@ do
         done
     done
 done
-'''
+```
+
 All the results will be recorded in the local logs.
 ## Model Tuning
 If you want to determine some hyperparameters by K-fold cross validation, please remove the `--full-training` option in the training command. The default K is 5 and it can be set by `--K`.
