@@ -18,35 +18,8 @@ cookActivities = {
                   "Leave_Home": offset + 4, "Eat": offset + 5, "Bed_to_toilet": offset + 6},
     "kyoto7.txt": {"Other": offset, "Work": offset + 1, "Sleep": offset + 2, "Relax": offset + 3,
                    "Personal_hygiene": offset + 4, "Cook": offset + 5, "Bed_to_toilet": offset + 6},
-    "kyoto8.txt": {"Other": offset, "Bathing": offset + 1, "Cook": offset + 2, "Sleep": offset + 3, "Work": offset + 4,
-                   "Bed_to_toilet": offset + 5, "Personal_hygiene": offset + 6, "Relax": offset + 7, "Eat": offset + 8,
-                   "Take_medicine": offset + 9, "Enter_home": offset + 10, "Leave_home": offset + 11},
-    "kyoto11.txt": {"Other": offset, "Work": offset + 1, "Sleep": offset + 2, "Relax": offset + 3,
-                    "Personal_hygiene": offset + 4, "Leave_Home": offset + 5, "Enter_home": offset + 6, "Eat": offset + 7,
-                    "Cook": offset + 8, "Bed_to_toilet": offset + 9, "Bathing": offset + 10, "Take_medicine": offset + 11},
     "milan.txt": {"Other": offset, "Work": offset + 1, "Take_medicine": offset + 2, "Sleep": offset + 3, "Relax": offset + 4,
-                  "Leave_Home": offset + 5, "Eat": offset + 6, "Cook": offset + 7, "Bed_to_toilet": offset + 8, "Bathing": offset + 9},
-    "orange.txt": {
-        "Other": offset,
-        "Entering": offset + 1,
-        "Using_the_sink": offset + 2,
-        "Watching_TV": offset + 3,
-        "Using_the_toilet": offset + 4,
-        "Cooking": offset + 5,
-        "Washing_the_dishes": offset + 6,
-        "Reading": offset + 7,
-        "Napping": offset + 8,
-        "Dressing": offset + 9,
-        "Computing": offset + 10,
-        "Leaving": offset + 11,
-        "Showering": offset + 12,
-        "Eating": offset + 13,
-        "Cleaning": offset + 14,
-        "Going_up": offset + 15,
-        "Going_down": offset + 16,
-        "Preparing": offset + 17,
-    }
-}
+                  "Leave_Home": offset + 5, "Eat": offset + 6, "Cook": offset + 7, "Bed_to_toilet": offset + 8, "Bathing": offset + 9}}
 
 mappingActivities = {
     "cairo.txt": {"_": "Other","R1wake": "Other","R2wake": "Other","Nightwandering": "Other","R1workinoffice": "Work",
@@ -59,9 +32,7 @@ mappingActivities = {
     "milan.txt": {"_": "Other","Master_Bedroom_Activity": "Other","Meditate": "Other","Chores": "Work","Desk_Activity": "Work",
                   "Morning_Meds": "Take_medicine","Eve_Meds": "Take_medicine","Sleep": "Sleep","Read": "Relax","Watch_TV": "Relax",
                   "Leave_Home": "Leave_Home","Dining_Rm_Activity": "Eat","Kitchen_Activity": "Cook","Bed_to_Toilet": "Bed_to_toilet",
-                  "Master_Bathroom": "Bathing","Guest_Bathroom": "Bathing"},
-    "orange.txt": {**{k:k for k, v in cookActivities["orange.txt"].items() if k != "Other"},  "_": "Other"}
-}
+                  "Master_Bathroom": "Bathing","Guest_Bathroom": "Bathing"}}
 
 class HARDataset:
     def __init__(self, seqfile, imagefile, locfile, catfile, time_aware=False):
@@ -213,7 +184,7 @@ class HARDataset:
                 clean_dir(f"{self.seqfile}_test/{self.dataname}/{i + 20}")
 
     def __freqcut__(self, threshold=0.05):
-        """Original sensor-based pruning (unchanged)."""
+        """sensor-based pruning."""
         def prune_dir(path):
             if not os.path.isdir(path): return
             for file in os.listdir(path):
@@ -232,124 +203,6 @@ class HARDataset:
                     except Exception:
                         pass
                 df.to_csv(fp, header=False, index=False)
-
-        for i in range(self.MAX):
-            if not self.time_aware:
-                prune_dir(f"{self.seqfile}/{self.dataname}/{i + 20}")
-            else:
-                prune_dir(f"{self.seqfile}_train/{self.dataname}/{i + 20}")
-                prune_dir(f"{self.seqfile}_test/{self.dataname}/{i + 20}")
-
-    def __freqcut_spa__(self, threshold=150):
-        """sensor and spatial based pruning. Drop low frequency or space sudden change"""
-        def prune_dir(path):
-            if self.dataname == "milan":
-                dots = {"M028":[162,359],"M021":[97,168],"M020":[162,359],"M025":[240,629],"M007":[466,174],"M026":[566,207],"M008":[676,340],
-                        "M006":[758,111],"M005":[1043,39],"M004":[817,340],"M019":[530,461],"M009":[599,594],"M013":[420,560],"M018":[394,798],
-                        "M017":[522,801],"M027":[970,753],"M024":[168,1046],"M011":[598,910],"M010":[714,911],"M016":[478,982],"M015":[455,1066],
-                        "M014":[453,1170],"D003":[447,1225],"M012":[714,1099],"M023":[546,1107],"M022":[629,1143],"T001":[704,1135],"M002":[1155,996],
-                        "M003":[923,1101],"M001":[1148,1176],"D001":[1159,1231],"D002":[1095,1095],"T002":[563,868]}
-                sensor_set = ['M006','M024','M025','M011','M017','M005','M020','M010','M015','M013','M019','D001','M009','M007','M023',
-                          'T002','M012','D002','M002','T001','M001','M016','M008','M022','M028','D003','M003','M004','M018','M014','M021','M027','M026']
-            elif self.dataname == "cairo":
-                dots = {'M021':[315,240],'M007':[466,402],'M009':[259,361],'M016':[217,63],'M023':[487,202],'M022':[436,241],'M027':[606,117],
-                        'T002':[88,421],'M012':[155,426],'M005':[451,353],'M017':[219,94],"M015":[108,145],'T001':[400,387],'M003':[383,399],
-                        'M004':[577,343],'M020':[184,355],'M019':[164,125],'T005':[644,140],'M026':[619,89],'M014':[161,223],'M008':[330,350],
-                        'M024':[606,247],'M013':[146,327],'M006':[348,352],'M010':[261,422],'M002':[384,452],'T003':[79,160],'M001':[504,455],
-                        'M018':[230,160],'M025':[654,161],'T004':[325,214],'M011':[314,484]}
-                sensor_set = ['M010','M015','M001','M012','M027','M023','M022','M020','M006','M007','M009','M024','M003','M005','M017',
-                          'T001','M021','M018','T005','M026','T002','T004','M004','M002','T003','M016','M019','M013','M025','M011','M008','M014']
-            elif self.dataname == "kyoto7":
-                dots = {'M03':[940,269],'I03':[1824,896],'L06':[625,1026],'M16':[1468,650],'D09':[1327,697],'M40':[625,1113],'AD1-B':[1589,931],'M28':[316,702],
-                        'M27':[120,704],'D10':[1325,790],'M20':[1263,1124],'M17':[1468,832],'L12':[560,765],'M49':[314,216],'M44':[335,477],'M18':[1469,985],
-                        'M15':[1466,584],'M51':[1457,1156],'D07':[1602,841],'M13':[1520,268],'D14':[1619,930],'M09':[1321,435],'M11':[1318,115],'M39':[626,980],
-                        'M42':[489,585],'M25':[922,1175],'M30':[480,792],'M07':[1126,440],'M12':[1522,114],'M45':[121,368],'L13':[561,762],'M34':[436,1154],
-                        'M50':[318,370],'AD1-A':[1581,759],'M48':[314,92],'M46':[119,219],'M05':[1126,114],'M37':[589,701],'M43':[323,589],'M10':[1320,271],
-                        'M41':[627,1171],'M01':[1085,591],'M24':[1086,1175],'M35':[436,1012],'L10':[1449,792],'M33':[256,1157],'M26':[926,1024],'D03':[460,761],
-                        'M21':[1081,983],'M32':[259,1007],'D15':[1622,989],'M04':[946,119],'D05':[596,747],'M29':[484,700],'M08':[1267,505],'L11':[1258,1154],
-                        'M36':[435,881],'L09':[994,1137],'M23':[1084,647],'M22':[1083,831],'AD1-C':[1590,983],'M14':[1516,434],'M38':[625,825],'M19':[1270,984],
-                        'M02':[943,439],'M06':[1126,275],'D12':[1177,695],'L04':[235,1207],'M31':[263,872],'M47':[123,92],'D08':[1331,652]}
-                sensor_set = ['M07','M20','D07','D12','M38','AD1-A','M25','M01','M19','M45','M12','L09','M16','D09','D14','L10','M48','M17','M22','M35',
-                          'L11','M37','M46','M49','M43','D10','L06','M04','AD1-B','M11','M32','I03','M24','M27','M03','D03','M23','M26','M31','D15',
-                          'M50','M34','M15','D08','M33','L12','M13','M09','M21','M51','M44','L04','M18','D05','M47','M05','M02','M41','M29','M39','M42',
-                          'M36','M08','AD1-C','M10','M40','M06','M28','L13','M30','M14']
-
-            if not os.path.isdir(path): return
-            for file in os.listdir(path):
-                fp = os.path.join(path, file)
-                df = pd.read_csv(fp, header=None)
-                H = df.iloc[:, :-2].to_numpy()
-                idx = [np.where(row == 1)[0].item() for row in H]
-                sensor = [sensor_set[i] for i in idx]
-                coords = [dots[s] for s in sensor]
-
-                drop_list = []
-                for j in range(len(coords)-2):
-                    diff_1 = ((coords[j+1][0]-coords[j][0])**2 + (coords[j+1][1]-coords[j][1])**2)**0.5
-                    diff_2 = ((coords[j+2][0]-coords[j+1][0])**2 + (coords[j+2][1]-coords[j+1][1])**2)**0.5
-                    if diff_1 > threshold and diff_2 > threshold:
-                        drop_list.append(j)
-                df.drop(drop_list, inplace=True)
-                df.to_csv(fp, header=False, index=False)
-
-        for i in range(self.MAX):
-            if not self.time_aware:
-                prune_dir(f"{self.seqfile}/{self.dataname}/{i + 20}")
-            else:
-                prune_dir(f"{self.seqfile}_train/{self.dataname}/{i + 20}")
-                prune_dir(f"{self.seqfile}_test/{self.dataname}/{i + 20}")
-
-    def __freqcut_room__(self, room_json_path, threshold=0.05):
-        """
-        Room-based pruning: drop rows whose active sensor belongs to rooms whose frequency
-        is <= threshold * (max room frequency in that file). Mirrors the sensor-based logic.
-        """
-        if not hasattr(self, "sensor_set") or self.sensor_set is None:
-            raise RuntimeError("sensor_set not found. Ensure __getseq__ ran and set self.sensor_set.")
-
-        with open(room_json_path, "r") as f:
-            sensor_to_room = json.load(f)
-
-        def prune_dir(path):
-            if not os.path.isdir(path): return
-            for file in os.listdir(path):
-                fp = os.path.join(path, file)
-                df = pd.read_csv(fp, header=None)
-                if df.empty or df.shape[1] < 3:
-                    continue
-                H = df.iloc[:, :-2].to_numpy()
-                uni, count = np.unique(H, axis=0, return_counts=True)
-
-                # map unique patterns to active sensor (single 1)
-                pat_col = []
-                for row in uni:
-                    idx = np.where(row == 1)[0]
-                    pat_col.append(int(idx[0]) if len(idx) == 1 else None)
-
-                # count per room
-                room_counts = {}
-                for vec, cnt, col in zip(uni, count, pat_col):
-                    if col is None or col >= len(self.sensor_set): continue
-                    sname = self.sensor_set[col]
-                    room = sensor_to_room.get(sname)
-                    if room is None: continue
-                    room_counts[room] = room_counts.get(room, 0) + int(cnt)
-
-                if not room_counts:
-                    df.to_csv(fp, header=False, index=False); continue
-
-                mx = max(room_counts.values())
-                rare_rooms = {r for r, v in room_counts.items() if v / mx <= threshold}
-                if not rare_rooms:
-                    df.to_csv(fp, header=False, index=False); continue
-
-                sensors_to_drop = {s for s, r in sensor_to_room.items() if r in rare_rooms}
-                cols_to_drop = [i for i, s in enumerate(self.sensor_set) if s in sensors_to_drop]
-                for c in cols_to_drop:
-                    df.drop(df[df.iloc[:, c] == 1].index, inplace=True)
-
-                if df.empty: os.remove(fp)
-                else:        df.to_csv(fp, header=False, index=False)
 
         for i in range(self.MAX):
             if not self.time_aware:
@@ -556,16 +409,6 @@ class HARDataset:
                     xx, yy = int(d[0] * 224 / 1862), int(d[1] * 224 / 1280)
                 x.append(xx); y.append(yy); c.append(cm.OrRd(fre[s] / max(fre)))
 
-            # ###################
-            # diffx = [x[i+1] - x[i] for i in range(len(x)-1)]
-            # diffy = [y[i+1] - y[i] for i in range(len(y)-1)]
-            # diff = [ (diffx[i]**2 + diffy[i]**2)**0.5 for i in range(len(diffx)) ]
-            # if not self.time_aware:
-            #     plt.plot(diff)
-            #     plt.savefig(f"{self.locfile}_diff/{self.dataname}/{label}/{label}_{i}.jpeg")
-            #     plt.close()
-            # ###################
-
             if len(x) == 1:
                 plt.plot(x, y, c=c[0], marker='o')
             elif len(x) > 1:
@@ -634,8 +477,6 @@ class HARDataset:
             end   = break_points[i + 1] if i < len(break_points) - 1 else len(Y)
             seg_lens.append(end - start)
 
-
-
         if not per_label:
             plt.figure(figsize=(8, 3))
             plt.plot(range(len(seg_lens)), seg_lens, marker='o', linestyle='none', ms=2)
@@ -669,6 +510,7 @@ class HARDataset:
                     plt.savefig(out, dpi=200); plt.close()
                 else:
                     plt.show()
+                    
     def plot_activity_lengths_bar(self, save_png=None, per_label=False, logy=False):
         """
         Bar plot: segment index (x) vs number of time stamps (y).
@@ -731,7 +573,7 @@ class HARDataset:
 
     # ---------- Corrupt -------------
     def seq_corrupt(self, ratio=0.01, ac=5):
-        # 传感器故障  在paddding前使用
+        # Stimulate the sensor mulfunction. Please used before calling the padding function.
         k=0
         for i in range(self.MAX):
             path=f"{self.seqfile}/{self.dataname}/{i+20}"
@@ -749,7 +591,7 @@ class HARDataset:
                     data.to_csv(dir,header=False,index=False)
     
     def img_corrupt(self, var=10):
-        # 在cat之前用
+        # Stimulate the sensor mulfunction. Please used before calling the cat function.
         dataset=self.dataset.copy()
         for i in range(self.MAX):
             os.makedirs(f"{self.locfile}/{self.dataname}/{i+20}",exist_ok=True)
@@ -945,3 +787,4 @@ if __name__ == "__main__":
         print("Generating Category Images...")
         H.cat();
         print("Done!")
+
