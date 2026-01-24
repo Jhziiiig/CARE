@@ -37,22 +37,13 @@ do
     do
         for seed in 10 
         do
-            for filter_t in sens
+            for filter_threshold in 0.1
             do
-                for filter_threshold in 0.1
+                for weight in 0.5
                 do
-                    for weight in 0.5
-                    do
-                    if [ "$filter_threshold" == "0.00" ] && [ "$filter" == "room" ]; then
-                        continue
-                    fi
-                    if [ -f model/$dataset-$Bi-$seed-cross-scl_filter_${filter_t}_t${filter_threshold#0.}/Test.json ]; then
-                        echo "model/$dataset-$Bi-$seed-cross-scl_filter_${filter_t}_t${filter_threshold#0.} exists"
-                    else
-                        echo "model/$dataset-$Bi-$seed-cross-scl_filter_${filter_t}_t${filter_threshold#0.} does not exist"
-                        CUDA_VISIBLE_DEVICES=4 python ContrastLearning.py --dataset $dataset --BiLSTM $Bi --seed $seed --filter $filter_t --filter_threshold $filter_threshold --weight $weight --full-training --maxlen 1500
-                    fi
-                    done
+                echo "model/$dataset-$Bi-$seed-cross-scl_filter_${filter_t}_t${filter_threshold#0.} does not exist"
+                CUDA_VISIBLE_DEVICES=4 python ContrastLearning.py --dataset $dataset --BiLSTM $Bi --seed $seed --filter $filter_t --filter_threshold $filter_threshold --weight $weight --full-training --maxlen 1500
+                fi
                 done
             done
         done
