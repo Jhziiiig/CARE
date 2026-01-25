@@ -107,13 +107,9 @@ class LSTMModel(nn.Module):
     def __init__(self,MAX=10, input=35, bi=1):
         super(LSTMModel,self).__init__()
         self.lstm=nn.LSTM(input_size=input, hidden_size=20, num_layers=2, batch_first=True, dropout=0.3, bidirectional=bi) # 2 layers  dropout 0.1
-        #35,34,73
+
     def forward(self,x):
         out,_ = self.lstm(x)
-        # out=out[:,-1,:]
-
-        # batch_size=out.shape[0]
-        # out=out.reshape(batch_size,-1)
         return out
     
 
@@ -134,34 +130,23 @@ class LSTM_CNN(nn.Module):
         if bi==0:
             self.mlp1 = nn.Sequential(
                 nn.Linear(20,32), 
-                ############################ Activation
-                # nn.RELU()
             )
             self.mlp2 = nn.Sequential(
                 nn.Linear(512, 32),
-                # nn.Linear(20, 32), # 7/7
-                ############################ Activation
-                # nn.SELU()
             )
             self.mlp3 = nn.Sequential(
                 nn.Linear(512+20, MAX)
-                # nn.Linear(40, MAX)# 7/7
             )
         elif bi==1:
             self.mlp1 = nn.Sequential(
-                nn.Linear(20*2,32), #
-                ############################ Activation
-                # nn.RELU()
+                nn.Linear(20*2,32), 
             )
             self.mlp2 = nn.Sequential(
                 nn.Linear(512, 32),
-                # nn.Linear(20, 32), # 7/7
-                ############################ Activation
-                # nn.SELU()
+                # nn.Linear(20, 32)
             )
             self.mlp3 = nn.Sequential(
                 nn.Linear(512+20*2, MAX)
-                # nn.Linear(60, MAX)# 7/7
             )
 
     def forward(self,seq,image):
@@ -175,23 +160,12 @@ class LSTM_CNN(nn.Module):
         batch_size = image.shape[0]
         image = image.reshape(batch_size, -1)
         
-        # image=self.img_seq_balance(image)
-
         conca = torch.cat([seq, image], dim=1)
         conca = self.mlp3(conca)
 
         seq = self.mlp1(seq)
         image = self.mlp2(image)
         return conca,seq,image
-        ### For SCL in dim=2
-        # conca = torch.cat([seq, image], dim=1)
-        # conca = self.mlp3(conca)
-
-        # seq = F.normalize(seq)
-        # image = F.normalize(image)
-        # feat=torch.cat([seq,image],dim=1)
-        # # feat=self.mlp4(feat)
-        # return conca,seq,image,feat
 
 
 class SupConLoss(nn.Module):
@@ -222,7 +196,6 @@ class SupConLoss(nn.Module):
         device=(torch.device("cuda")
                 if features.is_cuda
                 else torch.device("cpu"))
-        ########################################################
         if len(features.shape) < 3:
             raise ValueError('`features` needs to be [bsz, n_views, ...],'
                              'at least 3 dimensions are required')
@@ -283,210 +256,8 @@ class SupConLoss(nn.Module):
 
         # loss
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
-        
-        ##############################
-        if self.reduction == 'mean':
-            loss = loss.view(anchor_count, batch_size).mean()
-        elif self.reduction == 'sqrt':
-            loss = loss.view(anchor_count, batch_size).mean(dim=1)[None,:]
-            loss = torch.sqrt(loss@loss.T)
-
-        if self.supcon_grad:
-            return loss
-        else:
-            return loss
-
-        # return float(torch.sqrt(loss@loss.T))
-
-class SupConLossWithNOTA(nn.Module):
-    r"""
-    Supervised Contrastive loss with optional NOTA behavior (label == 0).
-
-    Behavior
-    --------
-    - If enable_nota=False: behaves like standard SupCon (with positives defined by equality of labels).
-    - If enable_nota=True:
-        * Positives are defined only for non-NOTA labels (>0). NOTA never forms positives.
-        * NOTA anchors (label==0) get a repulsive InfoNCE term:
-              ℓ_i^NOTA = log( Σ_{a in contrasts eligible for NOTA} exp(s_{ia}) ),
-          which encourages low similarity to the chosen contrast pool.
-          By default, NOTA repels against NON-NOTA only (nota_compare_to='nonnota').
-          You can set nota_compare_to='all' to repel from everyone (including other NOTA).
-        * Optionally, non-NOTA anchors can EXCLUDE NOTA contrasts from their denominator
-          (exclude_nota_from_nonnota_denominator=True), making NOTA "don't care" for them.
-
-    Args
-    ----
-    temperature: float
-        Softmax temperature τ.
-    contrast_mode: str
-        'all' (use all views as anchors) or 'one' (use only view 0 as anchors).
-    base_temperature: float
-        Base temperature used to scale the loss (as in SupCon).
-    enable_nota: bool
-        If True, enable special handling for label==0 (NOTA).
-    repulsion_weight: float
-        λ_rep: weight on the NOTA repulsion term.
-    nota_compare_to: {'nonnota', 'all'}
-        For NOTA anchors, which contrasts to repel against: only non-NOTA (default) or all.
-    exclude_nota_from_nonnota_denominator: bool
-        If True, NOTA contrasts are removed from the denominator of non-NOTA anchors.
-        Default False (vanilla SupCon denominator includes all non-self contrasts).
-    eps: float
-        Numerical stability constant.
-
-    Inputs
-    ------
-    features: Tensor
-        Shape [bsz, n_views, ...]. Will be flattened on the last dims.
-    labels: Tensor
-        Shape [bsz]. Integer labels; 0 denotes NOTA if enable_nota=True.
-
-    Returns
-    -------
-    loss: Tensor (scalar)
-    """
-    def __init__(self,
-                 temperature=0.07,
-                 contrast_mode='all',
-                 base_temperature=0.07,
-                 enable_nota=True,
-                 nota_weight=1.0,
-                 nota_compare_to='nonnota',  # or 'all'
-                 exclude_nota_from_nonnota_denominator=False,
-                 eps=1e-20):
-        super().__init__()
-        assert contrast_mode in ('one', 'all')
-        assert nota_compare_to in ('nonnota', 'all')
-        self.temperature = float(temperature)
-        self.contrast_mode = contrast_mode
-        self.base_temperature = float(base_temperature)
-        self.enable_nota = bool(enable_nota)
-        self.nota_weight = float(nota_weight)
-        self.nota_compare_to = nota_compare_to
-        self.exclude_nota_from_nonnota_denominator = bool(exclude_nota_from_nonnota_denominator)
-        self.eps = float(eps)
-
-    def forward(self, features, labels):
-        if features.ndim < 3:
-            raise ValueError("`features` must have shape [bsz, n_views, ...].")
-        bsz, n_views = features.shape[:2]
-        device = features.device
-        if features.ndim > 3:
-            features = features.view(bsz, n_views, -1)  # flatten trailing dims
-
-        # ----- Build positive-pair mask at the SAMPLE level -----
-        # Base equality mask: same label -> positive in vanilla SupCon
-        y = labels.view(-1, 1)
-        same_cls = (y == y.T).float().to(device)               # [bsz, bsz]
-
-        if self.enable_nota:
-            # Positives only for non-NOTA classes
-            non_nota_pair = ((y > 0) & (y.T > 0)).float().to(device)
-            mask_pos_sample = same_cls * non_nota_pair         # no positives for label==0
-        else:
-            mask_pos_sample = same_cls                         # standard SupCon
-
-        # ----- Build feature matrices for contrast -----
-        contrast_count = n_views
-        contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)  # [bsz*n_views, d]
-
-        if self.contrast_mode == 'one':
-            anchor_feature = features[:, 0]                                   # [bsz, d]
-            anchor_count = 1
-        else:
-            anchor_feature = contrast_feature                                 # [bsz*n_views, d]
-            anchor_count = contrast_count
-
-        # ----- Similarity logits (scaled), stabilized -----
-        logits = torch.matmul(anchor_feature, contrast_feature.T) / self.temperature
-        logits_max, _ = logits.max(dim=1, keepdim=True)
-        logits = logits - logits_max.detach()  # numerical stability
-
-        # ----- Tile masks to match logits shape -----
-        # Base "eligible contrast" mask: exclude self-contrast only
-        logits_mask = torch.ones_like(logits, device=device)
-        diag_idx = torch.arange(bsz * anchor_count, device=device)
-        logits_mask.scatter_(1, diag_idx.view(-1, 1), 0.0)  # zero diagonal
-
-        mask_pos = mask_pos_sample.repeat(anchor_count, contrast_count)       # [bsz*anc, bsz*cont]
-
-        # ----- Optional: exclude NOTA from denominators of non-NOTA anchors -----
-        # This affects ONLY the denominator (i.e., the set we sum over in softmax), not the positive mask.
-        if self.enable_nota and self.exclude_nota_from_nonnota_denominator:
-            labels_vec = labels.view(-1)
-            is_nota_col = (labels_vec == 0).float().to(device)                # [bsz]
-            # tile columns over views:
-            is_nota_col_tiled = is_nota_col.repeat(contrast_count)            # [bsz*cont]
-            # find non-NOTA anchors:
-            if self.contrast_mode == 'one':
-                anchor_labels = labels_vec                                    # [bsz]
-            else:
-                anchor_labels = labels_vec.repeat_interleave(anchor_count)     # [bsz*anc]
-            is_nonnota_anchor = (anchor_labels > 0)                            # [bsz*anc]
-            # Build a [bsz*anc, bsz*cont] mask that zeros NOTA columns for non-NOTA anchor rows
-            elig_mask = torch.ones_like(logits_mask, dtype=torch.bool, device=device)
-            if is_nonnota_anchor.any():
-                # rows where anchor is non-NOTA:
-                rows = is_nonnota_anchor.nonzero(as_tuple=False).view(-1)
-                # broadcast NOTA columns to those rows
-                elig_mask[rows] = ~is_nota_col_tiled.bool()                    # keep only non-NOTA cols
-            logits_mask = logits_mask.bool() & elig_mask
-            logits_mask = logits_mask.float()
-
-        # ----- Softmax denominator over eligible contrasts -----
-        exp_logits = torch.exp(logits) * logits_mask
-        denom = exp_logits.sum(1, keepdim=True).clamp_min(self.eps)
-        log_prob = logits - denom.log()
-
-        # ----- SupCon positive term (for anchors that have positives) -----
-        pos_count = mask_pos.sum(1)                               # [bsz*anc]
-        has_pos = pos_count > 0
-        mean_log_prob_pos = torch.zeros_like(pos_count, device=device)
-        if has_pos.any():
-            mean_log_prob_pos[has_pos] = (mask_pos[has_pos] * log_prob[has_pos]).sum(1) / pos_count[has_pos]
-
-        supcon_term = -(self.temperature / self.base_temperature) * mean_log_prob_pos  # [bsz*anc]
-
-        # ----- NOTA repulsion term for NOTA anchors (optional) -----
-        if self.enable_nota:
-            labels_vec = labels.view(-1)
-            if self.contrast_mode == 'one':
-                anchor_labels = labels_vec                                  # [bsz]
-            else:
-                anchor_labels = labels_vec.repeat_interleave(anchor_count)  # [bsz*anc]
-            is_nota_anchor = (anchor_labels == 0)
-
-            if is_nota_anchor.any():
-                # Choose which contrasts NOTA repels against
-                if self.nota_compare_to == 'nonnota':
-                    # Only NON-NOTA contrasts:
-                    contrast_is_nonnota = (labels_vec > 0).float().to(device)        # [bsz]
-                    contrast_is_nonnota = contrast_is_nonnota.repeat(contrast_count) # [bsz*cont]
-                    nota_contrast_mask = contrast_is_nonnota.unsqueeze(0)            # [1, bsz*cont]
-                else:
-                    # 'all': all contrasts (already excluding self via logits_mask)
-                    nota_contrast_mask = torch.ones(1, bsz * contrast_count, device=device)
-
-                # Combine with current eligibility (logits_mask)
-                nota_valid = (logits_mask > 0) & nota_contrast_mask.bool()           # [bsz*anc, bsz*cont]
-
-                # Repulsive-InfoNCE: log(sum exp(similarity)) over the chosen contrasts
-                sum_exp = (exp_logits * nota_valid.float()).sum(1) + self.eps
-                nota_repulsion = sum_exp.log()                                       # [bsz*anc]
-
-                nota_term = torch.zeros_like(supcon_term, device=device)
-                nota_term[is_nota_anchor] = (self.temperature / self.base_temperature) * nota_repulsion[is_nota_anchor]
-                nota_term = self.nota_weight * nota_term
-            else:
-                nota_term = torch.zeros_like(supcon_term, device=device)
-        else:
-            nota_term = torch.zeros_like(supcon_term, device=device)
-
-        # ----- Combine and average over anchors -----
-        loss = (supcon_term + nota_term).view(anchor_count, bsz).mean()
+        loss = loss.view(anchor_count, batch_size).mean()
         return loss
-
 
 
 def train(dataloader, model, align_weight, img2seq_weight, mode, optimizer,loss1,loss2,device):
@@ -501,28 +272,26 @@ def train(dataloader, model, align_weight, img2seq_weight, mode, optimizer,loss1
         image=image.to(device)
         y=y.long().to(device)
         optimizer.zero_grad()
-        #############################
-        # start_time = time.time()  # 记录开始时间
+
+        # start_time = time.time() 
         conca,z_i,z_j = model(data, image)
 
-        # end_time = time.time()  # 记录结束时间
-        # print(f"运行时间: {end_time - start_time} 秒")
+        # end_time = time.time() 
+        # print(f"Running Time Per Batch: {end_time - start_time} 秒")
 
         # allocated_memory_bytes = torch.cuda.memory_allocated(device)
-        # allocated_memory_mib = allocated_memory_bytes / (1024 * 1024)  # 转换为 MiB
+        # allocated_memory_mib = allocated_memory_bytes / (1024 * 1024) 
         # print(f"Allocated memory: {allocated_memory_mib} MiB")
 
         z_i=F.normalize(z_i,dim=1) * img2seq_weight # seq
         z_j=F.normalize(z_j,dim=1) # img
         z_i=z_i.unsqueeze(1)
         z_j=z_j.unsqueeze(1)
-        # feat=torch.concat([z_i,z_j],dim=0) 
-        # ty=torch.cat([y,y], dim=0)
-        # loss = a*loss1(features=feat,labels=ty)+(1-a)*loss2(conca,y) # 3,5
+
         if mode=="cross":
             feat=torch.concat([z_i,z_j],dim=0) 
             ty=torch.cat([y,y], dim=0)
-            loss = align_weight*loss1(features=feat,labels=ty)+(1-align_weight)*loss2(conca,y) # 3,5
+            loss = align_weight*loss1(features=feat,labels=ty)+(1-align_weight)*loss2(conca,y) 
 
         elif mode=="single":
             feat=torch.concat([z_i,z_j],dim=0) 
@@ -533,7 +302,6 @@ def train(dataloader, model, align_weight, img2seq_weight, mode, optimizer,loss1
         optimizer.step()
         loss = loss.item()
         print(y.flatten().unique().tolist())
-        # print(f'loss:{loss:>7f},SCL:{loss1(features=feat,labels=ty):>7f},CE:{loss2(conca,y):>7f}')
 
 
 def test(dataloader, model,device):
@@ -549,7 +317,6 @@ def test(dataloader, model,device):
             data=data.to(device)
             image=image.to(device)
             y=y.to(device)
-            ########### for SCL
             conca, z_i, z_j= model(data,image)
             correct += (conca.argmax(1) == y).type(torch.float).sum().item()
             all_labels.extend(y.cpu().numpy())
@@ -594,11 +361,9 @@ def run(args):
     time_aware=args.timesplit 
     
     if "milan" in file:
-        class_weights = torch.tensor([0.1,1,1,1,1,1,1,1,1,1]).to(device)
         align_weight=0.6
         input=35
     elif "cairo" in file:
-        # class_weights = torch.tensor([1,1,1,1,1,1,1]).to(device)
         align_weight=0.9
         input=34 # 34
     elif "kyoto7" in file:
@@ -612,7 +377,7 @@ def run(args):
     mode=args.mode
     epochs = 60 #60
     seed = args.seed # 15,30*,45,60
-    k_folds = 5 #5
+    k_folds = args.K 
     batch_size = 64
     train_ratio = 0.7
     torch.manual_seed(seed)
@@ -623,8 +388,7 @@ def run(args):
         MAX=15
 
     if time_aware==0:
-        # dataset=Data_Generator(file,MAX,seqfile=f"seq",catfile=f"cat")
-        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_t{int(args.filter_threshold*100):02d}_offFalse",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}_offFalse")
+        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}")
         num_samples = len(dataset)
         num_train = int(train_ratio * num_samples)
         num_test = num_samples - num_train
@@ -632,15 +396,13 @@ def run(args):
     else:
         train_dataset=Data_Generator(file,MAX,seqfile=f"datasets/seq_ori_train_{file}",catfile=f"datasets/cat_ori_train_{file}")
         test_dataset=Data_Generator(file,MAX,seqfile=f"datasets/seq_ori_test_{file}",catfile=f"datasets/cat_ori_test_{file}")
-    # 初始化K-Fold
+    # K-Fold
     kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
     results = []
 
     best_epochs = []
     if not args.full_training:
         for fold, (train_idx, val_idx) in enumerate(kf.split(train_dataset)):
-            # if fold in [0,1]:
-            #     continue
             print(f'FOLD {fold + 1}')
             print('--------------------------------')
             epoch_val_results=[]
@@ -648,24 +410,14 @@ def run(args):
             train_subsampler = Subset(train_dataset, train_idx)
             val_subsampler = Subset(train_dataset, val_idx)
 
-            # 定义数据加载器
             train_loader = DataLoader(train_subsampler, batch_size=batch_size, shuffle=True)
             val_loader = DataLoader(val_subsampler, batch_size=batch_size, shuffle=False)
 
-            # 重新初始化模型和优化器
             model=LSTM_CNN(MAX,input,bi).to(device)
-            # model=torch.load("D:\HAR\CL_HAR\model\kyoto7-True-30-cross/3fold_21Epoch.pth")
-            optimizer = optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001) # 1e-2
-            if args.nota:
-                loss1=SupConLossWithNOTA(contrast_mode='all',temperature=0.05,enable_nota=True, nota_weight=args.nota_weight)
-            else:
-                # loss1=SupConLossWithNOTA(contrast_mode='all',temperature=0.05,enable_nota=False)
-                loss1=SupConLoss(contrast_mode='all',temperature=0.05)
+            optimizer = optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001) 
+            loss1=SupConLoss(contrast_mode='all',temperature=0.05)
             loss2=nn.CrossEntropyLoss()
-
-            # 训练和验证
             
-            # checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{args.reduction}-{args.supcon_grad}" if not args.nota else f"model/{file}-{bi}-{seed}-{mode}-nota"
             scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
             checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
             os.makedirs(checkpoint_dir,exist_ok=True)
@@ -693,22 +445,7 @@ def run(args):
             test_metrics=test(test_loader, model,device)
             # get_tsne(file,model,test_loader,0)
             update_json(f'{checkpoint_dir}/Test.json', f"FOLD_{fold+1}_true", test_metrics)
-
-            # print("Start Test")
-            # epoch_test_results=[]
-            # test_accuracy_list=[]
-            # for epoch in range(1, epochs+1):  
-            #     print(epoch)
-            #     model=torch.load(f"{checkpoint_dir}/{fold+1}fold_{epoch}Epoch.pth", weights_only=False)
-            #     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-            #     test_metrics=test(test_loader, model,device)
-            #     epoch_test_results.append(test_metrics)
-            #     test_accuracy_list.append(test_metrics["Accuracy"])
-            #     # print(accu)
-            # best_test_epoch = test_accuracy_list.index(max(test_accuracy_list))
-            # best_test_metrics = epoch_test_results[best_test_epoch]
-            # update_json(f'{checkpoint_dir}/Test.json', f"FOLD_{fold+1}_peek", best_test_metrics)
-
+            
         # remove checkpoints except the best one
         checkpoints = glob(os.path.join(checkpoint_dir, "*.pth"))
         best_checkpoints = [os.path.join(checkpoint_dir, f"{fold+1}fold_{best_epoch+1}Epoch.pth") for fold, best_epoch in zip(range(k_folds), best_epochs)]
@@ -718,16 +455,11 @@ def run(args):
     else:
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         model=LSTM_CNN(MAX,input,bi).to(device)
-        # model=torch.load("D:\HAR\CL_HAR\model\kyoto7-True-30-cross/3fold_21Epoch.pth")
         optimizer = optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001) # 1e-2
-        if args.nota:
-            loss1=SupConLossWithNOTA(contrast_mode='all',temperature=0.05,enable_nota=True, nota_weight=args.nota_weight)
-        else:
-            # loss1=SupConLossWithNOTA(contrast_mode='all',temperature=0.05,enable_nota=False)
-            loss1=SupConLoss(contrast_mode='all',temperature=0.05)
+        loss1=SupConLoss(contrast_mode='all',temperature=0.05)
         loss2=nn.CrossEntropyLoss()
 
-        # 训练和验证
+        # Train and Validation
         scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
         checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
         os.makedirs(checkpoint_dir,exist_ok=True)
@@ -805,27 +537,22 @@ def get_tsne(filename,model,dataloader,epoch):
         plt.close()
 
 if __name__=='__main__':
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    # print(torch.cuda.is_available())
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, choices=["milan","cairo","kyoto7", "orange"], default="milan")
     parser.add_argument("--BiLSTM", type=int, choices=[0,1], default=1)
     parser.add_argument("--seed", type=int, default=30)
     parser.add_argument("--mode",type=str, choices=["cross","single"], default="cross")
     parser.add_argument("--weight",type=float)
+    parser.add_argument("--K",type=int,help="K-fold cross validation")
     parser.add_argument("--imgseq",type=float,default=1)
     parser.add_argument("--timesplit",type=int,choices=[0,1],default=0)# 0代表不用时间split，1代表用
     parser.add_argument("--filter", choices=["sens","room", "spa"], default="sens")
     parser.add_argument("--filter_threshold", type=float, default=0.01)
     parser.add_argument("--full-training", action="store_true", default=False)
-    # ======== newly added debugging arguments ========
-    # parser.add_argument("--reduction", type=str, choices=["mean","sqrt"], required=True)
-    # parser.add_argument("--supcon_grad", action="store_true", default=False)
-    parser.add_argument("--nota", action="store_true", default=False)
-    parser.add_argument("--nota-weight", type=float, default=1.0)
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
