@@ -18,9 +18,9 @@ bash dataset_gen.sh
 ```
 If you want to customize the padding length, dataset, frequency filtering threshold or temporal binning, you can run:
 ```python
-python DataGeneration.py --datasets milan  --mode sensor --maxlen 100 --threshold 0.01 --off
-python DataGeneration.py --datasets cairo  --mode sensor --threshold 0.01 --maxlen 100 --off
-python DataGeneration.py --datasets kyoto7  --mode sensor --threshold 0.1 --maxlen 100 --off
+python DataGeneration.py --datasets milan --threshold 0.01 --maxlen 1500 --bin 1
+python DataGeneration.py --datasets cairo --threshold 0.01 --maxlen 1500 --bin 1
+python DataGeneration.py --datasets kyoto7 --threshold 0.1 --maxlen 1500 --bin 1
 ```
 
 ## Model Training and Testing
@@ -42,7 +42,7 @@ do
                 for weight in 0.5
                 do
                 echo "model/$dataset-$Bi-$seed-cross-scl_filter_${filter_t}_t${filter_threshold#0.} does not exist"
-                CUDA_VISIBLE_DEVICES=4 python ContrastLearning.py --dataset $dataset --BiLSTM $Bi --seed $seed --filter $filter_t --filter_threshold $filter_threshold --weight $weight --full-training --maxlen 1500
+                CUDA_VISIBLE_DEVICES=4 python ContrastLearning.py --dataset $dataset --BiLSTM $Bi --seed $seed --filter_threshold $filter_threshold --weight $weight --full-training --maxlen 1500
                 fi
                 done
             done
