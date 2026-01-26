@@ -388,7 +388,7 @@ def run(args):
         MAX=15
 
     if time_aware==0:
-        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}")
+        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_bin{int(args.bin)}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}")
         num_samples = len(dataset)
         num_train = int(train_ratio * num_samples)
         num_test = num_samples - num_train
@@ -548,10 +548,12 @@ if __name__=='__main__':
     parser.add_argument("--timesplit",type=int,choices=[0,1],default=0)# 0代表不用时间split，1代表用
     parser.add_argument("--filter", choices=["sens","room", "spa"], default="sens")
     parser.add_argument("--filter_threshold", type=float, default=0.01)
+    parser.add_argument("--bin", type=int, default=1)
     parser.add_argument("--full-training", action="store_true", default=False)
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
