@@ -697,7 +697,7 @@ if __name__ == "__main__":
     parser.add_argument("--threshold", type=float, default=0.00, help="freqcut threshold")
     parser.add_argument("--time-aware", action="store_true", default=False, help="Setting True for autoregressive experiment")
     parser.add_argument("--maxlen", type=int, default=1500, help="Padding length")
-    parser.add_argument("--bin", type=float, default=1, help="Temporal Binning")
+    parser.add_argument("--bin", type=int, default=1, help="Temporal Binning")
 
     parser.add_argument("--seq_corrupt", action="store_true", help="Setting True to stimult the sensor malfunction")
     parser.add_argument("--img_corrupt", action="store_true", help="Setting True to stimult the sensor malfunction")
@@ -720,10 +720,10 @@ if __name__ == "__main__":
         img_root   = f"datasets/image{tag}_var{args.var}"
         cat_root   = f"datasets/cat{tag}_var{args.var}"
     else:
-        seq_root   = f"datasets/seq{tag}"
-        loc_root   = f"datasets/loc{tag}"
-        img_root   = f"datasets/image{tag}"
-        cat_root   = f"datasets/cat{tag}"
+        seq_root   = f"datasets/seq_bin{args.bin}{tag}"
+        loc_root   = f"datasets/loc_bin{args.bin}{tag}"
+        img_root   = f"datasets/image_bin{args.bin}{tag}"
+        cat_root   = f"datasets/cat_bin{args.bin}{tag}"
 
     for name in args.datasets:
         H = HARDataset(seqfile=seq_root, locfile=loc_root, imagefile=img_root, catfile=cat_root, bin=args.bin, time_aware=args.time_aware)
@@ -751,6 +751,7 @@ if __name__ == "__main__":
         print("Generating Category Images...")
         H.cat();
         print("Done!")
+
 
 
 
