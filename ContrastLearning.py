@@ -381,7 +381,11 @@ def run(args):
     lr=args.lr
     torch.manual_seed(seed)
     MAX=7
-    
+
+    if not args.ckpt is None:
+        print("Skip Validation")
+        args.full_training = True
+        
     if "milan" in file:
         MAX=10
 
@@ -462,20 +466,24 @@ def run(args):
         scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
         checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
         os.makedirs(checkpoint_dir,exist_ok=True)
-        for epoch in range(1, epochs+1):  
-            print(f'Epoch {epoch}')
-            train(train_loader, model, align_weight, args.imgseq, mode, optimizer,loss1,loss2,device)
-            # get_tsne(file,model,val_loader,epoch)
-            torch.save(model,os.path.join(checkpoint_dir,f"NaNfold_{epoch}Epoch.pth"))
+        if args.ckpt is None:
+            for epoch in range(1, epochs+1):  
+                print(f'Epoch {epoch}')
+                train(train_loader, model, align_weight, args.imgseq, mode, optimizer,loss1,loss2,device)
+                # get_tsne(file,model,val_loader,epoch)
+                torch.save(model,os.path.join(checkpoint_dir,f"NaNfold_{epoch}Epoch.pth"))
         
         print("Start Test")
         acc=[]
         met=[]
-        for epoch in range(40, epochs+1):
-            model=torch.load(f"{checkpoint_dir}/NaNfold_{epoch}Epoch.pth", weights_only=False)
-            test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-            test_metrics=test(test_loader, model,device)
-            acc.append(test_metrics["Accuracy"])
+        if args.ckpt is None:
+            model=torch.load(f"{checkpoint_dir}/NaNfold_{epochs}Epoch.pth", weights_only=False)
+        else:
+            model=torch.load(args.ckpt, weights_only=False)
+            
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        test_metrics=test(test_loader, model,device)
+        acc.append(test_metrics["Accuracy"])
             met.append(test_metrics)
         best_epoch=acc.index(max(acc))+40
         test_metrics=met[acc.index(max(acc))]
@@ -483,11 +491,12 @@ def run(args):
         update_json(f'{checkpoint_dir}/Test.json', f"FOLD_NaN_true", test_metrics)
         
         # remove checkpoints except the best one
-        checkpoints = glob(os.path.join(checkpoint_dir, "*.pth"))
-        best_checkpoints = [os.path.join(checkpoint_dir, f"NaNfold_{best_epoch+1}Epoch.pth") for fold, best_epoch in zip(range(1), best_epochs)]
-        for ckpt in checkpoints:
-            if ckpt not in best_checkpoints:
-                os.remove(ckpt)
+        if args.ckpt is None:
+            checkpoints = glob(os.path.join(checkpoint_dir, "*.pth"))
+            best_checkpoints = [os.path.join(checkpoint_dir, f"NaNfold_{best_epoch+1}Epoch.pth") for fold, best_epoch in zip(range(1), best_epochs)]
+            for ckpt in checkpoints:
+                if ckpt not in best_checkpoints:
+                    os.remove(ckpt)
 
 def get_tsne(filename,model,dataloader,epoch):
     model1=model.model1
@@ -555,11 +564,13 @@ if __name__=='__main__':
     parser.add_argument("--batchsize", ,type=int, default=64)
     parser.add_argument("--trainratio", type=float, default=0.7, help="Fraction of data used for training")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--ckpt", type=str, help="Pretrained Model", default= None)
     
     
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
