@@ -369,23 +369,21 @@ def run(args):
     elif "kyoto7" in file:
         align_weight=0.85
         input=73
-    elif "orange" in file:
-        align_weight=0.6
-        input=195
     if args.weight is not None:
         align_weight=args.weight
+        
     mode=args.mode
-    epochs = 60 #60
-    seed = args.seed # 15,30*,45,60
+    epochs = args.epoch 
+    seed = args.seed 
     k_folds = args.K 
-    batch_size = 64
-    train_ratio = 0.7
+    batch_size = args.batchsize
+    train_ratio = args.trainratio
+    lr=args.lr
     torch.manual_seed(seed)
     MAX=7
+    
     if "milan" in file:
         MAX=10
-    elif "orange" in file:
-        MAX=15
 
     if time_aware==0:
         dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_bin{int(args.bin)}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}")
@@ -396,10 +394,15 @@ def run(args):
     else:
         train_dataset=Data_Generator(file,MAX,seqfile=f"datasets/seq_ori_train_{file}",catfile=f"datasets/cat_ori_train_{file}")
         test_dataset=Data_Generator(file,MAX,seqfile=f"datasets/seq_ori_test_{file}",catfile=f"datasets/cat_ori_test_{file}")
+        
     # K-Fold
     kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
     results = []
 
+    # Loss
+    loss1=SupConLoss(contrast_mode='all',temperature=0.05)
+    loss2=nn.CrossEntropyLoss()
+    
     best_epochs = []
     if not args.full_training:
         for fold, (train_idx, val_idx) in enumerate(kf.split(train_dataset)):
@@ -414,9 +417,7 @@ def run(args):
             val_loader = DataLoader(val_subsampler, batch_size=batch_size, shuffle=False)
 
             model=LSTM_CNN(MAX,input,bi).to(device)
-            optimizer = optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001) 
-            loss1=SupConLoss(contrast_mode='all',temperature=0.05)
-            loss2=nn.CrossEntropyLoss()
+            optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.001) 
             
             scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
             checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
@@ -455,9 +456,7 @@ def run(args):
     else:
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         model=LSTM_CNN(MAX,input,bi).to(device)
-        optimizer = optim.Adam(model.parameters(), lr=1e-3,weight_decay=0.001) # 1e-2
-        loss1=SupConLoss(contrast_mode='all',temperature=0.05)
-        loss2=nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.001)
 
         # Train and Validation
         scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
@@ -482,9 +481,10 @@ def run(args):
         test_metrics=met[acc.index(max(acc))]
         print(f"Best Test Epoch: {best_epoch}")
         update_json(f'{checkpoint_dir}/Test.json', f"FOLD_NaN_true", test_metrics)
+        
         # remove checkpoints except the best one
         checkpoints = glob(os.path.join(checkpoint_dir, "*.pth"))
-        best_checkpoints = [os.path.join(checkpoint_dir, f"NaNfold_{best_epoch+1}Epoch.pth") for fold, best_epoch in zip(range(k_folds), best_epochs)]
+        best_checkpoints = [os.path.join(checkpoint_dir, f"NaNfold_{best_epoch+1}Epoch.pth") for fold, best_epoch in zip(range(1), best_epochs)]
         for ckpt in checkpoints:
             if ckpt not in best_checkpoints:
                 os.remove(ckpt)
@@ -542,17 +542,25 @@ if __name__=='__main__':
     parser.add_argument("--BiLSTM", type=int, choices=[0,1], default=1)
     parser.add_argument("--seed", type=int, default=30)
     parser.add_argument("--mode",type=str, choices=["cross","single"], default="cross")
-    parser.add_argument("--weight",type=float)
+    parser.add_argument("--weight",type=float, default=None)
     parser.add_argument("--K",type=int,help="K-fold cross validation")
     parser.add_argument("--imgseq",type=float,default=1)
-    parser.add_argument("--timesplit",type=int,choices=[0,1],default=0)# 0代表不用时间split，1代表用
+    parser.add_argument("--timesplit",type=int,choices=[0,1],default=0)
     parser.add_argument("--filter", choices=["sens","room", "spa"], default="sens")
     parser.add_argument("--filter_threshold", type=float, default=0.01)
     parser.add_argument("--bin", type=int, default=1)
     parser.add_argument("--full-training", action="store_true", default=False)
+    
+    parser.add_argument("--epoch", ,type=int, default=60)
+    parser.add_argument("--batchsize", ,type=int, default=64)
+    parser.add_argument("--trainratio", type=float, default=0.7, help="Fraction of data used for training")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    
+    
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
