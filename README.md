@@ -51,6 +51,6 @@ do
 done
 ```
 
-All the results will be recorded in the local logs.
+All the results will be recorded in the local logs. And our pretrained model can also be downloaded from Our google drive(https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing).
 ## Model Tuning
 If you want to determine some hyperparameters by K-fold cross validation, please remove the `--full-training` option in the training command. The default K is 5 and it can be set by `--K`.
