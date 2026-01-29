@@ -1,4 +1,4 @@
-name: HAR
+name: CARE
 channels:
   - pytorch
   - nvidia
