@@ -9,8 +9,7 @@ conda activate CARE
 ```
 ## Data Download
 Data can be either downloaded from [CASAS](https://casas.wsu.edu/) or our [Google Drive](https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing). We trained and tested on Milan, Cairo and Kyoto7. 
-
-All the datasets files are provided by CASAS(https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
+All the datasets files are provided by [CASAS](https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
 ```
 @article{cook2012casas,
   title={CASAS: A smart home in a box},
