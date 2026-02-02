@@ -13,7 +13,7 @@ import argparse
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader,random_split, Subset
-from sklearn.manifold import TSNE
+# from sklearn.manifold import TSNE
 import torchvision.models as models
 from sklearn.metrics import confusion_matrix,precision_score,recall_score,f1_score
 import torch.optim as optim
@@ -430,7 +430,7 @@ def run(args):
                 print(f'Epoch {epoch}')
                 train(train_loader, model, align_weight, args.imgseq, mode, optimizer,loss1,loss2,device)
                 val_metrics = test(val_loader, model, device)
-                # get_tsne(file,model,val_loader,epoch)
+                # get_(file,model,val_loader,epoch)
                 torch.save(model,os.path.join(checkpoint_dir,f"{fold+1}fold_{epoch}Epoch.pth"))
                 epoch_val_results.append(val_metrics)
                 val_accu_list.append(val_metrics["Accuracy"])
@@ -448,7 +448,7 @@ def run(args):
             model=torch.load(f"{checkpoint_dir}/{fold+1}fold_{val_accu_list.index(max(val_accu_list))+1}Epoch.pth", weights_only=False)
             test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
             test_metrics=test(test_loader, model,device)
-            # get_tsne(file,model,test_loader,0)
+            # get_(file,model,test_loader,0)
             update_json(f'{checkpoint_dir}/Test.json', f"FOLD_{fold+1}_true", test_metrics)
             
         # remove checkpoints except the best one
@@ -470,7 +470,7 @@ def run(args):
             for epoch in range(1, epochs+1):  
                 print(f'Epoch {epoch}')
                 train(train_loader, model, align_weight, args.imgseq, mode, optimizer,loss1,loss2,device)
-                # get_tsne(file,model,val_loader,epoch)
+                # get_(file,model,val_loader,epoch)
                 torch.save(model,os.path.join(checkpoint_dir,f"NaNfold_{epoch}Epoch.pth"))
         
         print("Start Test")
@@ -498,52 +498,52 @@ def run(args):
                 if ckpt not in best_checkpoints:
                     os.remove(ckpt)
 
-def get_tsne(filename,model,dataloader,epoch):
-    model1=model.model1
-    model2=model.model2
-    all_labels=[]
+# def get_tsne(filename,model,dataloader,epoch):
+#     model1=model.model1
+#     model2=model.model2
+#     all_labels=[]
 
-    ts1=0
-    ts2=0
-    ts=0
-    t=0
-    with torch.no_grad():
-        for batch,(data,image,Y) in enumerate(dataloader):
-            image=image.permute([0,3,1,2])
+#     ts1=0
+#     ts2=0
+#     ts=0
+#     t=0
+#     with torch.no_grad():
+#         for batch,(data,image,Y) in enumerate(dataloader):
+#             image=image.permute([0,3,1,2])
 
-            data=data.to(device)
-            image=image.to(device)
-            Y=Y.to(device)
-            pre1,_=model1(data)
-            pre1=pre1[:,-1,:]
-            pre2=model2(image)
-            pre=torch.cat([pre1,pre2],dim=1)
-            # print(pre1.shape)
-            # print(pre2.shape)
-            if t==0:
-                ts=pre
-                ts1=pre1
-                ts2=pre2
-            else:
-                ts=torch.cat([ts,pre],dim=0)
-                ts1=torch.cat([ts1,pre1],dim=0)
-                ts2=torch.cat([ts2,pre2],dim=0)
-            all_labels.extend(Y.cpu().numpy())
-            t+=1
-        ts=ts.cpu()
-        ts1=ts1.cpu()
-        ts2=ts2.cpu()
+#             data=data.to(device)
+#             image=image.to(device)
+#             Y=Y.to(device)
+#             pre1,_=model1(data)
+#             pre1=pre1[:,-1,:]
+#             pre2=model2(image)
+#             pre=torch.cat([pre1,pre2],dim=1)
+#             # print(pre1.shape)
+#             # print(pre2.shape)
+#             if t==0:
+#                 ts=pre
+#                 ts1=pre1
+#                 ts2=pre2
+#             else:
+#                 ts=torch.cat([ts,pre],dim=0)
+#                 ts1=torch.cat([ts1,pre1],dim=0)
+#                 ts2=torch.cat([ts2,pre2],dim=0)
+#             all_labels.extend(Y.cpu().numpy())
+#             t+=1
+#         ts=ts.cpu()
+#         ts1=ts1.cpu()
+#         ts2=ts2.cpu()
 
-        tsne = TSNE(n_components=2, init='pca', random_state=0)
-        tsne.fit_transform(ts)
-        color_list = ['black', 'red', 'green', 'blue', 'yellow', 'purple', 'lawngreen', 'peru',
-                      'violet', 'slategray']
-        col = [color_list[k] for k in all_labels]
-        plt.scatter(tsne.embedding_[:, 0], tsne.embedding_[:, 1], c=col)
-        plt.show()
-        plt.savefig(f'tsne/CL/{filename}__{epoch}.png', bbox_inches='tight', pad_inches=0,
-                    transparent=False)
-        plt.close()
+#         tsne = TSNE(n_components=2, init='pca', random_state=0)
+#         tsne.fit_transform(ts)
+#         color_list = ['black', 'red', 'green', 'blue', 'yellow', 'purple', 'lawngreen', 'peru',
+#                       'violet', 'slategray']
+#         col = [color_list[k] for k in all_labels]
+#         plt.scatter(tsne.embedding_[:, 0], tsne.embedding_[:, 1], c=col)
+#         plt.show()
+#         plt.savefig(f'tsne/CL/{filename}__{epoch}.png', bbox_inches='tight', pad_inches=0,
+#                     transparent=False)
+#         plt.close()
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
@@ -570,6 +570,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
