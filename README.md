@@ -43,7 +43,7 @@ If users use our default setting to process the data, then users can just run:
 ```bash
 bash run.sh
 ```
-If users customize usersr setting, please make sure the following setting are consistent:
+If users customize the data setting, please make sure the following setting are consistent:
 ```bash
 CUDA_VISIBLE_DEVICES=device_id python ContrastLearning.py --dataset $dataset --BiLSTM $Bi --seed $seed --filter_threshold $filter_threshold --weight $weight --maxlen 1500 --K 5 --epoch 60 --batchsize 64 --trainratio 0.7
 ```
