@@ -4,7 +4,7 @@ This is the offical repo of CARE: Contrastive Alignment for ADL Recognition from
 ## Setup
 Our code is working on Python 3.9. users can run the following code to setup.
 ```bash
-conda env create -f environment.yaml
+conda env create -f environment.yml
 conda activate CARE
 pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu126
 ```
