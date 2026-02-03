@@ -390,7 +390,7 @@ def run(args):
         MAX=10
 
     if time_aware==0:
-        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_bin{int(args.bin)}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_t{int(args.filter_threshold*100):02d}")
+        dataset = Data_Generator(file,MAX,seqfile=f"datasets/seq_{args.filter}_bin{int(args.bin)}_t{int(args.filter_threshold*100):02d}",catfile=f"datasets/cat_{args.filter}_bin{int(args.bin)}_t{int(args.filter_threshold*100):02d}")
         num_samples = len(dataset)
         num_train = int(train_ratio * num_samples)
         num_test = num_samples - num_train
@@ -570,6 +570,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
