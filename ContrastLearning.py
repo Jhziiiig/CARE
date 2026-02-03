@@ -484,7 +484,7 @@ def run(args):
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
         test_metrics=test(test_loader, model,device)
         acc.append(test_metrics["Accuracy"])
-            met.append(test_metrics)
+        met.append(test_metrics)
         best_epoch=acc.index(max(acc))+40
         test_metrics=met[acc.index(max(acc))]
         print(f"Best Test Epoch: {best_epoch}")
@@ -570,6 +570,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
