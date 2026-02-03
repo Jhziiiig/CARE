@@ -64,7 +64,7 @@ class HARDataset:
                 f_info = line.decode().split()
                 if not ('.' in str(f_info[0]) + str(f_info[1])):
                     f_info[1] = f_info[1] + '.000000'
-                ts.append(int(str(f_info[1])[:2]) / (24/self.bin))  # hour/24
+                ts.append(int(str(f_info[1])[:2]) /self.bin) 
                 sensors.append(str(f_info[2]))
                 signal.append(str(f_info[3]))
                 if len(f_info) == 4:
@@ -751,6 +751,7 @@ if __name__ == "__main__":
         print("Generating Category Images...")
         H.cat();
         print("Done!")
+
 
 
 
