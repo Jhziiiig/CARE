@@ -423,7 +423,7 @@ def run(args):
             model=LSTM_CNN(MAX,input,bi).to(device)
             optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.001) 
             
-            scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
+            scl_mode = "scl"
             checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
             os.makedirs(checkpoint_dir,exist_ok=True)
             for epoch in range(1, epochs+1):  
@@ -463,7 +463,7 @@ def run(args):
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0.001)
 
         # Train and Validation
-        scl_mode = "scl" if not args.nota else f"scl-nota-{args.nota_weight}"
+        scl_mode = "scl"
         checkpoint_dir = f"model/{file}-{bi}-{seed}-{mode}-{scl_mode}_filter_{args.filter}_t{int(args.filter_threshold*100):02d}_align_weight{align_weight}"
         os.makedirs(checkpoint_dir,exist_ok=True)
         if args.ckpt is None:
@@ -561,7 +561,7 @@ if __name__=='__main__':
     parser.add_argument("--full-training", action="store_true", default=False)
     
     parser.add_argument("--epoch", type=int, default=60)
-    parser.add_argument("--batchsize",type=int, default=64)
+    parser.add_argument("--batchsize", type=int, default=64)
     parser.add_argument("--trainratio", type=float, default=0.7, help="Fraction of data used for training")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--ckpt", type=str, help="Pretrained Model", default= None)
@@ -570,7 +570,6 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
-
 
 
 
