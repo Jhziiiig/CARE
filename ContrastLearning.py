@@ -561,7 +561,7 @@ if __name__=='__main__':
     parser.add_argument("--full-training", action="store_true", default=False)
     
     parser.add_argument("--epoch", type=int, default=60)
-    parser.add_argument("--batchsize", ,type=int, default=64)
+    parser.add_argument("--batchsize",type=int, default=64)
     parser.add_argument("--trainratio", type=float, default=0.7, help="Fraction of data used for training")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--ckpt", type=str, help="Pretrained Model", default= None)
@@ -570,6 +570,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
