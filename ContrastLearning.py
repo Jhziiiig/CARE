@@ -552,7 +552,7 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=int, default=30)
     parser.add_argument("--mode",type=str, choices=["cross","single"], default="cross")
     parser.add_argument("--weight",type=float, default=None)
-    parser.add_argument("--K",type=int,help="K-fold cross validation")
+    parser.add_argument("--K",type=int,help="K-fold cross validation", default=2)
     parser.add_argument("--imgseq",type=float,default=1)
     parser.add_argument("--timesplit",type=int,choices=[0,1],default=0)
     parser.add_argument("--filter", choices=["sens","room", "spa"], default="sens")
@@ -570,6 +570,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
