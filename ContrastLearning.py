@@ -301,7 +301,6 @@ def train(dataloader, model, align_weight, img2seq_weight, mode, optimizer,loss1
         loss.backward()
         optimizer.step()
         loss = loss.item()
-        print(y.flatten().unique().tolist())
 
 
 def test(dataloader, model,device):
@@ -570,6 +569,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run(args)
+
 
 
 
