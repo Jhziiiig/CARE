@@ -10,7 +10,7 @@ pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https
 pip install "numpy<2.0" "scipy<1.14" "scikit-learn<1.6" pandas matplotlib
 ```
 ## Data Download
-Data can be either downloaded from [CASAS](https://casas.wsu.edu/) or our [Google Drive](https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing). After downloading them, the dataset should be stored in a folder named "dataset". We trained and tested on Milan, Cairo and Kyoto7. All the datasets files are provided by [CASAS](https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
+Data can be either downloaded from [CASAS](https://casas.wsu.edu/) or our [Google Drive](https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing). After downloading them, the dataset txt file should be stored in a folder named "dataset". We trained and tested on Milan, Cairo and Kyoto7. All the datasets files are provided by [CASAS](https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
 ```
 @article{cook2012casas,
   title={CASAS: A smart home in a box},
