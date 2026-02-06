@@ -10,7 +10,7 @@ pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https
 pip install "numpy<2.0" "scipy<1.14" "scikit-learn<1.6" pandas matplotlib
 ```
 ## Data Download
-Data can be either downloaded from [CASAS](https://casas.wsu.edu/) or our [Google Drive](https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing). After downloading them, the dataset txt file should be stored in a folder named "dataset". We trained and tested on Milan, Cairo and Kyoto7. All the datasets files are provided by [CASAS](https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
+Data is stored under "dataset" folder, but user can also download it from [CASAS](https://casas.wsu.edu/). After downloading them, the dataset txt file should be stored in a folder named "dataset". We trained and tested on Milan, Cairo and Kyoto7. All the datasets files are provided by [CASAS](https://casas.wsu.edu/). If users used the dataset, please cite their paper or other references from their website:
 ```
 @article{cook2012casas,
   title={CASAS: A smart home in a box},
@@ -50,7 +50,7 @@ CUDA_VISIBLE_DEVICES=device_id python ContrastLearning.py --dataset $dataset --B
 ```
 
 All the results will be stored in the local logs. 
-We also provide the "--ckpt" argument if users want to skip the training process. After users finished the training or download our pretrained model from google drive, they can add the local path of checkpoint file to this argument. And then the program will perform the testing directly.
+We also provide the "--ckpt" argument if users want to skip the training process. After users finished the training or download our pretrained model from [Google Drive](https://drive.google.com/drive/folders/1eWQihhGHWFVzopOJw_xP7Yxl8YURE6l1?usp=sharing), they can add the local path of checkpoint file to this argument. And then the program will perform the testing directly.
 ## Model Tuning
 If users want to determine some hyperparameters by K-fold cross validation, please remove the `--full-training` option in the training command. The default fold number K is 5 and it can be set by `--K`.
 
