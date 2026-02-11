@@ -1,6 +1,6 @@
 # CARE: Contrastive Alignment for ADL Recognition from Event-Triggered Sensor Streams
 ![Model architecture](framework.png)
-This is the offical repo of CARE: Contrastive Alignment for ADL Recognition from Event-Triggered Sensor Streams, an end-to-end framework that jointly optimizes representation learning via Sequence-Image Contrastive Alignment (SICA) and classification via cross-entropy, ensuring both cross-representation alignment and task-specific discriminability.The paper is published on Percom 2026. We will provide the paper link once we have the camera ready version.
+This is the offical repo of CARE: Contrastive Alignment for ADL Recognition from Event-Triggered Sensor Streams, an end-to-end framework that jointly optimizes representation learning via Sequence-Image Contrastive Alignment (SICA) and classification via cross-entropy, ensuring both cross-representation alignment and task-specific discriminability. The paper is published on Percom 2026.
 ## Setup
 Our code is working on Python 3.9 and Linux server. users can run the following code to setup.
 ```bash
