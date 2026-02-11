@@ -56,3 +56,11 @@ If users want to determine some hyperparameters by K-fold cross validation, plea
 
 ## Citation
 If users use this repo, please cite:
+```
+@inproceedings{CARE,
+  title={CARE: Contrastive Alignment for ADL Recognition from Event-Triggered Sensor Streams},
+  author={Junhao Zhao and Zishuai Liu and Ruili Fang and Jin Lu and Linghan Zhang and Fei Dou},
+  booktitle={Proceedings of the International Conference on Pervasive Computing and Communications (PerCom)},
+  year={2026}
+}
+```
